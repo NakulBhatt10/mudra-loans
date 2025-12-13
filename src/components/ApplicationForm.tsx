@@ -1,13 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useState } from 'react';
-import { 
-  User, 
-  Briefcase, 
-  IndianRupee, 
-  Upload, 
-  CheckCircle2, 
-  ChevronRight, 
+import { useRef, useState, ChangeEvent } from 'react';
+import emailjs from '@emailjs/browser';
+
+import {
+  User,
+  Briefcase,
+  IndianRupee,
+  Upload,
+  CheckCircle2,
+  ChevronRight,
   ChevronLeft,
   Sparkles,
   Mail,
@@ -17,8 +19,9 @@ import {
   Calendar,
   TrendingUp,
   FileText,
-  X
+  X,
 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,7 +61,8 @@ interface FormData {
 
 export function ApplicationForm() {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -85,7 +89,7 @@ export function ApplicationForm() {
     },
   });
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: keyof Omit<FormData, 'documents'>, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -96,7 +100,7 @@ export function ApplicationForm() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, docType: keyof FormData['documents']) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>, docType: keyof FormData['documents']) => {
     const file = e.target.files?.[0] || null;
     updateDocument(docType, file);
   };
@@ -106,23 +110,75 @@ export function ApplicationForm() {
   };
 
   const nextStep = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep < 4) setCurrentStep((s) => s + 1);
   };
 
   const prevStep = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
+    if (currentStep > 1) setCurrentStep((s) => s - 1);
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast({
-      title: "Application Submitted!",
-      description: "We'll contact you within 24-48 hours.",
-    });
+
+    try {
+      const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string;
+      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string;
+      const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string;
+
+      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+        throw new Error('EmailJS env keys missing (.env)');
+      }
+
+      const message = `
+NEW MUDRA LOAN APPLICATION
+--------------------------
+Full Name: ${formData.fullName}
+Mobile: ${formData.mobile}
+Email: ${formData.email}
+City: ${formData.city}
+State: ${formData.state}
+
+Business Name: ${formData.businessName}
+Business Type: ${formData.businessType}
+Business Vintage: ${formData.businessVintage}
+Annual Turnover: ${formData.annualTurnover}
+
+Loan Type: ${formData.loanType}
+Loan Amount: ${formData.loanAmount}
+Loan Purpose: ${formData.loanPurpose}
+
+(Documents not attached)
+PAN Selected: ${formData.documents.pan ? formData.documents.pan.name : 'No'}
+Aadhaar Selected: ${formData.documents.aadhaar ? formData.documents.aadhaar.name : 'No'}
+GST Selected: ${formData.documents.gst ? formData.documents.gst.name : 'No'}
+Udyam Selected: ${formData.documents.udyam ? formData.documents.udyam.name : 'No'}
+Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No'}
+      `.trim();
+
+      // IMPORTANT:
+      // Your EmailJS template should use ONLY {{message}}
+      await emailjs.send(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        { message },
+        PUBLIC_KEY
+      );
+
+      setIsSubmitted(true);
+      toast({
+        title: 'Application Submitted',
+        description: 'We received your application successfully.',
+      });
+    } catch (err: any) {
+      console.error('EmailJS Error:', err);
+      toast({
+        title: 'Submission Failed',
+        description: String(err?.text || err?.message || 'EmailJS error'),
+        variant: 'destructive' as any,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -148,6 +204,7 @@ export function ApplicationForm() {
                   onChange={(e) => updateFormData('fullName', e.target.value)}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="mobile" className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-primary" />
@@ -161,6 +218,7 @@ export function ApplicationForm() {
                 />
               </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary" />
@@ -174,6 +232,7 @@ export function ApplicationForm() {
                 onChange={(e) => updateFormData('email', e.target.value)}
               />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="city" className="flex items-center gap-2">
@@ -187,6 +246,7 @@ export function ApplicationForm() {
                   onChange={(e) => updateFormData('city', e.target.value)}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="state">State</Label>
                 <Select value={formData.state} onValueChange={(value) => updateFormData('state', value)}>
@@ -194,8 +254,23 @@ export function ApplicationForm() {
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
-                    {['Andhra Pradesh', 'Karnataka', 'Kerala', 'Maharashtra', 'Tamil Nadu', 'Telangana', 'Delhi', 'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'West Bengal', 'Other'].map((state) => (
-                      <SelectItem key={state} value={state.toLowerCase()}>{state}</SelectItem>
+                    {[
+                      'Andhra Pradesh',
+                      'Karnataka',
+                      'Kerala',
+                      'Maharashtra',
+                      'Tamil Nadu',
+                      'Telangana',
+                      'Delhi',
+                      'Gujarat',
+                      'Rajasthan',
+                      'Uttar Pradesh',
+                      'West Bengal',
+                      'Other',
+                    ].map((state) => (
+                      <SelectItem key={state} value={state.toLowerCase()}>
+                        {state}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -224,6 +299,7 @@ export function ApplicationForm() {
                 onChange={(e) => updateFormData('businessName', e.target.value)}
               />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="businessType" className="flex items-center gap-2">
@@ -242,12 +318,16 @@ export function ApplicationForm() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="businessVintage" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-secondary" />
                   Business Vintage
                 </Label>
-                <Select value={formData.businessVintage} onValueChange={(value) => updateFormData('businessVintage', value)}>
+                <Select
+                  value={formData.businessVintage}
+                  onValueChange={(value) => updateFormData('businessVintage', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="How old is your business?" />
                   </SelectTrigger>
@@ -260,12 +340,16 @@ export function ApplicationForm() {
                 </Select>
               </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="annualTurnover" className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-secondary" />
                 Annual Turnover (Approx.)
               </Label>
-              <Select value={formData.annualTurnover} onValueChange={(value) => updateFormData('annualTurnover', value)}>
+              <Select
+                value={formData.annualTurnover}
+                onValueChange={(value) => updateFormData('annualTurnover', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select approximate turnover" />
                 </SelectTrigger>
@@ -294,6 +378,7 @@ export function ApplicationForm() {
                 <IndianRupee className="w-4 h-4 text-accent" />
                 Type of MUDRA Loan
               </Label>
+
               <RadioGroup
                 value={formData.loanType}
                 onValueChange={(value) => updateFormData('loanType', value)}
@@ -313,7 +398,9 @@ export function ApplicationForm() {
                     }`}
                   >
                     <RadioGroupItem value={type.value} className="sr-only" />
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${type.color} flex items-center justify-center mb-2`}>
+                    <div
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${type.color} flex items-center justify-center mb-2`}
+                    >
                       <span className="text-primary-foreground font-bold">{type.label[0]}</span>
                     </div>
                     <span className="font-semibold text-foreground">{type.label}</span>
@@ -378,6 +465,7 @@ export function ApplicationForm() {
                   {doc.required && <span className="text-destructive">*</span>}
                   {!doc.required && <span className="text-muted-foreground text-xs">(Optional)</span>}
                 </Label>
+
                 {formData.documents[doc.key] ? (
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-border">
                     <FileText className="w-5 h-5 text-primary" />
@@ -426,25 +514,19 @@ export function ApplicationForm() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 0.2 }}
+              transition={{ type: 'spring', delay: 0.2 }}
               className="w-24 h-24 mx-auto mb-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center"
             >
               <CheckCircle2 className="w-12 h-12 text-primary-foreground" />
             </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                 Thank You! <Sparkles className="inline w-8 h-8 text-accent" />
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Your MUDRA loan application has been submitted successfully. 
-                Our team will review your documents and contact you within 24-48 hours.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Application confirmation will be sent to: <span className="font-semibold">{formData.email}</span>
+                Your MUDRA loan application has been submitted successfully.
+                Our team will contact you within 24-48 hours.
               </p>
             </motion.div>
           </motion.div>
@@ -455,11 +537,9 @@ export function ApplicationForm() {
 
   return (
     <section id="apply" className="py-20 md:py-32 bg-background relative overflow-hidden" ref={ref}>
-      {/* Decorative */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-y-1/2 translate-x-1/2" />
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -473,7 +553,7 @@ export function ApplicationForm() {
             Apply for Your <span className="gradient-text">MUDRA Loan</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Fill in the details below and submit your application. 
+            Fill in the details below and submit your application.
             We'll get back to you within 24-48 hours.
           </p>
         </motion.div>
@@ -484,7 +564,6 @@ export function ApplicationForm() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="max-w-3xl mx-auto"
         >
-          {/* Steps Indicator */}
           <div className="flex items-center justify-between mb-10">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center flex-1">
@@ -496,34 +575,26 @@ export function ApplicationForm() {
                         : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {currentStep > step.id ? (
-                      <CheckCircle2 className="w-6 h-6" />
-                    ) : (
-                      <step.icon className="w-5 h-5" />
-                    )}
+                    {currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : <step.icon className="w-5 h-5" />}
                   </div>
-                  <span className={`mt-2 text-xs font-medium hidden md:block ${
-                    currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
-                  }`}>
+                  <span
+                    className={`mt-2 text-xs font-medium hidden md:block ${
+                      currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
                     {step.title}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-2 rounded ${
-                    currentStep > step.id ? 'bg-primary' : 'bg-muted'
-                  }`} />
+                  <div className={`flex-1 h-1 mx-2 rounded ${currentStep > step.id ? 'bg-primary' : 'bg-muted'}`} />
                 )}
               </div>
             ))}
           </div>
 
-          {/* Form Card */}
           <div className="p-8 rounded-3xl glass-card border border-border/50">
-            <AnimatePresence mode="wait">
-              {renderStepContent()}
-            </AnimatePresence>
+            <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
 
-            {/* Navigation */}
             <div className="flex justify-between mt-10 pt-6 border-t border-border/50">
               <Button
                 variant="outline"
@@ -541,16 +612,11 @@ export function ApplicationForm() {
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button
-                  variant="gold"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="min-w-[160px]"
-                >
+                <Button variant="gold" onClick={handleSubmit} disabled={isSubmitting} className="min-w-[160px]">
                   {isSubmitting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                       className="w-5 h-5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full"
                     />
                   ) : (
