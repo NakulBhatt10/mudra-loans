@@ -1,15 +1,14 @@
 import { motion } from 'framer-motion';
-import { 
-  Building2, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Facebook, 
-  Twitter, 
-  Instagram, 
+import {
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
+  Instagram,
   Linkedin,
-  ExternalLink,
-  Heart
+  Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,12 +39,21 @@ export function Footer() {
     message: '',
   });
 
+  // ✅ WhatsApp send (to 9930027408)
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const phone = '919930027408'; // 91 + 9930027408
+    const text = `Hello! I contacted from Mudra Loan website.\n\nName: ${contactForm.name}\nEmail: ${contactForm.email}\nMessage: ${contactForm.message}`;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+
     toast({
-      title: "Message Sent!",
-      description: "We'll get back to you soon.",
+      title: 'Opening WhatsApp...',
+      description: 'Your message is ready to send.',
     });
+
     setContactForm({ name: '', email: '', message: '' });
   };
 
@@ -57,7 +65,10 @@ export function Footer() {
   };
 
   return (
-    <footer id="contact" className="bg-gradient-to-br from-[hsl(215,50%,12%)] to-[hsl(215,60%,8%)] text-primary-foreground">
+    <footer
+      id="contact"
+      className="bg-gradient-to-br from-[hsl(215,50%,12%)] to-[hsl(215,60%,8%)] text-primary-foreground"
+    >
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -72,7 +83,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-primary-foreground/70 text-sm mb-6 leading-relaxed">
-              Empowering micro and small enterprises with easy access to credit 
+              Empowering micro and small enterprises with easy access to credit
               under Pradhan Mantri Mudra Yojana.
             </p>
             <div className="flex gap-3">
@@ -117,8 +128,11 @@ export function Footer() {
                 <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-primary-foreground/70">Email</p>
-                  <a href="mailto:myemail@example.com" className="text-sm hover:text-primary transition-colors">
-                    myemail@example.com
+                  <a
+                    href="mailto:nmudraloan@gmail.com"
+                    className="text-sm hover:text-primary transition-colors"
+                  >
+                    nmudraloan@gmail.com
                   </a>
                 </div>
               </li>
@@ -126,7 +140,10 @@ export function Footer() {
                 <Phone className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-primary-foreground/70">Phone</p>
-                  <a href="tel:+911234567890" className="text-sm hover:text-secondary transition-colors">
+                  <a
+                    href="tel:+919930027408"
+                    className="text-sm hover:text-secondary transition-colors"
+                  >
                     +91 9930027408
                   </a>
                 </div>
@@ -135,11 +152,7 @@ export function Footer() {
                 <MapPin className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-primary-foreground/70">Address</p>
-                  <p className="text-sm">
-                    Business Center, Financial District
-                    <br />
-                    Mumbai, Maharashtra, India
-                  </p>
+                  <p className="text-sm">Mumbai, Maharashtra, India</p>
                 </div>
               </li>
             </ul>
@@ -152,24 +165,30 @@ export function Footer() {
               <Input
                 placeholder="Your Name"
                 value={contactForm.name}
-                onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                onChange={(e) =>
+                  setContactForm({ ...contactForm, name: e.target.value })
+                }
                 className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
               />
               <Input
                 type="email"
                 placeholder="Your Email"
                 value={contactForm.email}
-                onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                onChange={(e) =>
+                  setContactForm({ ...contactForm, email: e.target.value })
+                }
                 className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
               />
               <Textarea
                 placeholder="Your Message"
                 value={contactForm.message}
-                onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                onChange={(e) =>
+                  setContactForm({ ...contactForm, message: e.target.value })
+                }
                 rows={3}
                 className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
               />
-              <Button variant="hero" size="sm" className="w-full">
+              <Button type="submit" variant="hero" size="sm" className="w-full">
                 Send Message
               </Button>
             </form>
@@ -181,9 +200,11 @@ export function Footer() {
       <div className="border-t border-primary-foreground/10">
         <div className="container mx-auto px-4 py-4">
           <p className="text-xs text-primary-foreground/50 text-center max-w-4xl mx-auto">
-            <strong>Disclaimer:</strong> This is an informational website about MUDRA Loans under Pradhan Mantri Mudra Yojana. 
-            Please verify the latest guidelines, terms, and conditions from official bank and government sources before applying. 
-            Interest rates and eligibility criteria may vary between different lending institutions.
+            <strong>Disclaimer:</strong> This is an informational website about
+            MUDRA Loans under Pradhan Mantri Mudra Yojana. Please verify the
+            latest guidelines, terms, and conditions from official bank and
+            government sources before applying. Interest rates and eligibility
+            criteria may vary between different lending institutions.
           </p>
         </div>
       </div>
@@ -196,7 +217,8 @@ export function Footer() {
               © {new Date().getFullYear()} MUDRA Loans. All rights reserved.
             </p>
             <p className="text-sm text-primary-foreground/50 flex items-center gap-1">
-              Made with <Heart className="w-4 h-4 text-destructive" /> for Indian Entrepreneurs
+              Made with <Heart className="w-4 h-4 text-destructive" /> for Indian
+              Entrepreneurs
             </p>
           </div>
         </div>
