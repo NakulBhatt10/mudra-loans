@@ -19,6 +19,7 @@ const requiredDocs = [
     description: 'Permanent Account Number card for identity and tax verification',
     required: true,
   },
+
   {
     icon: Fingerprint,
     name: 'Aadhaar Card',
@@ -29,13 +30,33 @@ const requiredDocs = [
     icon: Receipt,
     name: 'GST Registration',
     description: 'GST registration number (optional, but helpful if available)',
-    required: false,
+    required: true,
   },
   {
     icon: BadgeCheck,
     name: 'Udyam Registration',
     description: 'Udyam Registration Number (if applicable for your business)',
-    required: false,
+    required: true,
+  },
+    {
+    icon: CreditCard,
+    name: 'GST Return (3B) of 12 months',
+    description: '',
+    required: true,
+  },
+
+    {
+    icon: CreditCard,
+    name: 'Bank Statement (Updated 12 months)',
+    description: '',
+    required: true,
+  },
+
+    {
+    icon: CreditCard,
+    name: 'Last Three Years Complete ITR ',
+    description: '',
+    required: true,
   },
 ];
 
@@ -43,7 +64,7 @@ const additionalDocs = [
   { icon: Image, name: 'Passport Size Photos', description: '2-3 recent photographs' },
   { icon: FileText, name: 'Address Proof', description: 'Utility bill, rent agreement, or property documents' },
   { icon: FileText, name: 'Business Proof', description: 'Shop license, trade certificate, or registration' },
-  { icon: FileText, name: 'Bank Statements', description: 'Last 6 months bank statement (if existing account)' },
+
 ];
 
 export function DocumentsSection() {

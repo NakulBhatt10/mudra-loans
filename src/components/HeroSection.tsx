@@ -112,7 +112,8 @@ export function HeroSection() {
             className="text-lg md:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
             Pradhan Mantri Mudra Yojana (PMMY) — A Government of India initiative 
-            providing easy loans up to ₹10 Lakhs for micro and small enterprises. 
+            providing easy loans for micro and macro enterprises.Turnover less than ₹50 Lakhs &
+Turnover ≥ ₹50 Lakhs (as applicable).
             <span className="text-accent font-semibold"> Zero processing fees. No collateral needed.</span>
           </motion.p>
 
@@ -152,7 +153,7 @@ export function HeroSection() {
             {[
               { value: '₹10L', label: 'Max Loan Amount' },
               { value: '0%', label: 'Processing Fee' },
-              { value: '~9%', label: 'Interest Rate' },
+              { value: '~12%', label: 'Interest Rate' },
               { value: '5 Yrs', label: 'Tenure' },
             ].map((stat, index) => (
               <motion.div

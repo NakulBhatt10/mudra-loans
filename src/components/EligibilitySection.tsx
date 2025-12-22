@@ -2,45 +2,46 @@ import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { 
-  CheckCircle2, 
-  Users, 
-  Briefcase, 
-  ShieldCheck, 
-  Banknote,
+  CheckCircle2,
+  ArrowRight,
+  CreditCard,
+  Wallet,
+  RefreshCw,
+  ShieldCheck,
   TrendingUp,
-  Building2
+  Clock
 } from 'lucide-react';
 
-const eligibilityPoints = [
+const ccBenefits = [
   {
-    icon: Users,
-    title: 'For Non-Farming Businesses',
-    description: 'Ideal for micro and small enterprises in non-agricultural sectors',
+    icon: Wallet,
+    title: 'Withdraw Only What You Need',
+    description: 'Use funds as required and pay interest only on the amount you actually use.',
   },
   {
-    icon: Briefcase,
-    title: 'Trading, Services & Manufacturing',
-    description: 'Applicable across trading, service, and manufacturing industries',
+    icon: RefreshCw,
+    title: 'Reusable Credit Limit',
+    description: 'As you repay, your limit gets restored—so you can borrow again without reapplying.',
+  },
+  {
+    icon: Clock,
+    title: 'Quick Access to Working Capital',
+    description: 'Instant liquidity for inventory, salaries, rent, and day-to-day business expenses.',
   },
   {
     icon: ShieldCheck,
-    title: 'No Collateral Required',
-    description: 'Get loans without pledging any assets or property',
-  },
-  {
-    icon: Banknote,
-    title: 'Zero Processing Fee',
-    description: 'No hidden charges or application processing costs',
+    title: 'Better Cash Flow Control',
+    description: 'Helps manage seasonal demand, delayed payments, and short-term gaps smoothly.',
   },
   {
     icon: TrendingUp,
-    title: 'Flexible Loan Categories',
-    description: 'Choose from Shishu, Kishor, or Tarun based on your needs',
+    title: 'Supports Business Growth',
+    description: 'Keep operations running while you scale—without taking a new loan each time.',
   },
   {
-    icon: Building2,
-    title: 'Government Backed',
-    description: 'Secure lending backed by the Government of India',
+    icon: CreditCard,
+    title: 'Bank-Linked Facility',
+    description: 'A structured credit line that can improve your financial discipline and banking track record.',
   },
 ];
 
@@ -62,20 +63,21 @@ export function EligibilitySection() {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
-            Key Features
+            CC / OD Explained
           </span>
           <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-            Eligibility & <span className="gradient-text">Benefits</span>
+            Understand <span className="gradient-text">Cash Credit (CC)</span> Benefits
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Discover what makes MUDRA loans the ideal choice for small business owners 
-            looking to start or expand their enterprise.
+          <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+            If you apply for a loan as a <span className="font-semibold text-foreground">Cash Credit (CC)</span> facility,
+            you get a flexible credit line for your business—use it when needed, repay and reuse it again.
+            Below are the key benefits and two short videos to help you understand CC, OD and the difference between them.
           </p>
         </motion.div>
 
-        {/* Features Grid */}
+        {/* Benefits Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {eligibilityPoints.map((point, index) => (
+          {ccBenefits.map((point, index) => (
             <motion.div
               key={point.title}
               initial={{ opacity: 0, y: 30 }}
@@ -100,17 +102,79 @@ export function EligibilitySection() {
           ))}
         </div>
 
-        {/* Interest Rate Info */}
+        {/* Videos */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="mt-12"
+        >
+          <div className="text-center mb-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+              Watch & Learn
+            </h3>
+            <p className="text-muted-foreground mt-2">
+              These videos explain what CC & OD are and how they differ.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-2xl bg-card border border-border/50 shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-border/50">
+                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                  What is CC & OD?
+                  <ArrowRight className="w-4 h-4 text-primary" />
+                </h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Understand the basics of Cash Credit and Overdraft.
+                </p>
+              </div>
+              <div className="aspect-video w-full">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/axA8NGmdtC4"
+                  title="What is CC & OD?"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-card border border-border/50 shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-border/50">
+                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                  Difference Between CC & OD
+                  <ArrowRight className="w-4 h-4 text-primary" />
+                </h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  See how CC and OD differ and which one suits your needs.
+                </p>
+              </div>
+              <div className="aspect-video w-full">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/Dl2wWsMk018"
+                  title="Difference Between CC & OD"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Bottom Note */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.9 }}
           className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 border border-primary/10 text-center"
         >
           <p className="text-lg text-foreground">
-            💡 <span className="font-semibold">Interest Rates:</span> Typically ranging from{' '}
-            <span className="text-primary font-bold">9% to 10%</span> per annum 
-            (varies by bank and applicant profile). Always check the latest rates with your bank.
+            💡 <span className="font-semibold">Tip:</span> A CC facility is best for businesses that need
+            ongoing working capital—because you can withdraw, repay, and reuse the limit anytime.
           </p>
         </motion.div>
       </div>

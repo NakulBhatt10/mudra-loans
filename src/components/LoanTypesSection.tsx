@@ -1,58 +1,42 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
-import { Sprout, TrendingUp, Building2, ArrowRight } from 'lucide-react';
+import { BadgeIndianRupee, TrendingUp, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const loanTypes = [
   {
-    name: 'Shishu',
-    icon: Sprout,
-    amount: 'Up to ₹50,000',
+    name: 'Turnover < ₹50 Lakhs',
+    icon: BadgeIndianRupee,
+    amount: 'Annual turnover below ₹50 Lakhs',
     color: 'from-emerald-500 to-teal-500',
     bgColor: 'from-emerald-500/10 to-teal-500/10',
     borderColor: 'border-emerald-500/20 hover:border-emerald-500/40',
-    description: 'For very small and early-stage businesses just starting their entrepreneurial journey.',
+    description: 'For micro & small businesses with annual turnover under ₹50 Lakhs.',
     features: [
-      'Ideal for startups & micro enterprises',
+      'Faster eligibility checks',
       'Minimal documentation required',
-      'Quick disbursement process',
-      'No prior business experience needed',
+      'Working capital / day-to-day expenses',
+      'Suitable for early-stage & small setups',
     ],
-    ideal: 'Small vendors, home-based businesses, new entrepreneurs',
+    ideal: 'Small vendors, home-based businesses, retailers, service providers',
   },
   {
-    name: 'Kishor',
+    name: 'Turnover ≥ ₹50 Lakhs',
     icon: TrendingUp,
-    amount: '₹50,001 - ₹5 Lakhs',
+    amount: 'Annual turnover ₹50 Lakhs and above',
     color: 'from-blue-500 to-indigo-500',
     bgColor: 'from-blue-500/10 to-indigo-500/10',
     borderColor: 'border-blue-500/20 hover:border-blue-500/40',
-    description: 'For growing businesses that have established themselves and need additional capital.',
+    description: 'For growing businesses with annual turnover ₹50 Lakhs and above.',
     features: [
-      'For business expansion needs',
-      'Working capital support',
+      'Higher funding suitability',
+      'Expansion & scaling support',
       'Equipment & machinery purchase',
-      'Inventory funding available',
+      'Inventory & operational growth',
     ],
-    ideal: 'Growing shops, small manufacturing units, service providers',
+    ideal: 'Established shops, manufacturers, larger service businesses',
     popular: true,
-  },
-  {
-    name: 'Tarun',
-    icon: Building2,
-    amount: '₹5 Lakhs - ₹10 Lakhs',
-    color: 'from-purple-500 to-pink-500',
-    bgColor: 'from-purple-500/10 to-pink-500/10',
-    borderColor: 'border-purple-500/20 hover:border-purple-500/40',
-    description: 'For well-established businesses requiring significant capital for major expansion.',
-    features: [
-      'Large-scale business expansion',
-      'Infrastructure development',
-      'Technology upgradation',
-      'Market expansion support',
-    ],
-    ideal: 'Established enterprises, manufacturers, large service businesses',
   },
 ];
 
@@ -93,7 +77,7 @@ export function LoanTypesSection() {
         </motion.div>
 
         {/* Loan Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
           {loanTypes.map((loan, index) => (
             <motion.div
               key={loan.name}
@@ -101,7 +85,7 @@ export function LoanTypesSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.15 }}
               whileHover={{ y: -10 }}
-              className={`relative group ${loan.popular ? 'lg:-mt-4 lg:mb-4' : ''}`}
+              className="relative group w-full"
             >
               {/* Popular Badge */}
               {loan.popular && (
@@ -112,7 +96,7 @@ export function LoanTypesSection() {
                 </div>
               )}
 
-              <div className={`h-full rounded-3xl bg-card border-2 ${loan.borderColor} shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden`}>
+              <div className={`h-full rounded-3xl bg-card border-2 ${loan.borderColor} shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col`}>
                 {/* Card Header */}
                 <div className={`p-8 pb-6 bg-gradient-to-br ${loan.bgColor}`}>
                   <div className="flex items-center gap-4 mb-4">
@@ -134,7 +118,7 @@ export function LoanTypesSection() {
                 </div>
 
                 {/* Card Body */}
-                <div className="p-8 pt-6">
+                <div className="p-8 pt-6 flex flex-col flex-1">
                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
                     Key Features
                   </h4>
@@ -160,7 +144,7 @@ export function LoanTypesSection() {
 
                   <Button
                     variant={loan.popular ? 'hero' : 'outline'}
-                    className="w-full group/btn"
+                    className="w-full group/btn mt-auto"
                     onClick={() => scrollToSection('#apply')}
                   >
                     Apply for {loan.name}
