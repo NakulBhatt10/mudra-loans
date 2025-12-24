@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef, useState, ChangeEvent } from 'react';
-import emailjs from '@emailjs/browser';
 
 import {
   User,
@@ -63,6 +62,8 @@ export function ApplicationForm() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
 
+  const formRef = useRef<HTMLFormElement | null>(null);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -117,19 +118,7 @@ export function ApplicationForm() {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    try {
-      const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string;
-      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string;
-      const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string;
-
-      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-        throw new Error('EmailJS env keys missing (.env)');
-      }
-
-      const message = `
+  const message = `
 NEW MUDRA LOAN APPLICATION
 --------------------------
 Full Name: ${formData.fullName}
@@ -147,22 +136,66 @@ Loan Type: ${formData.loanType}
 Loan Amount: ${formData.loanAmount}
 Loan Purpose: ${formData.loanPurpose}
 
-(Documents not attached)
+(Documents)
 PAN Selected: ${formData.documents.pan ? formData.documents.pan.name : 'No'}
 Aadhaar Selected: ${formData.documents.aadhaar ? formData.documents.aadhaar.name : 'No'}
 GST Selected: ${formData.documents.gst ? formData.documents.gst.name : 'No'}
 Udyam Selected: ${formData.documents.udyam ? formData.documents.udyam.name : 'No'}
 Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No'}
-      `.trim();
+  `.trim();
 
-      // IMPORTANT:
-      // Your EmailJS template should use ONLY {{message}}
-      await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        { message },
-        PUBLIC_KEY
-      );
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // Your Node API endpoint (set this in .env)
+      // Example: VITE_APPLICATION_API_URL=http://localhost:3001/apply
+      const API_URL =
+        (import.meta.env.VITE_APPLICATION_API_URL as string) || 'https://api-mudra.onrender.com/apply';
+
+      const fd = new FormData();
+
+      // text fields
+      fd.append('fullName', formData.fullName);
+      fd.append('mobile', formData.mobile);
+      fd.append('email', formData.email);
+      fd.append('city', formData.city);
+      fd.append('state', formData.state);
+
+      fd.append('businessName', formData.businessName);
+      fd.append('businessType', formData.businessType);
+      fd.append('businessVintage', formData.businessVintage);
+      fd.append('annualTurnover', formData.annualTurnover);
+
+      fd.append('loanType', formData.loanType);
+      fd.append('loanAmount', formData.loanAmount);
+      fd.append('loanPurpose', formData.loanPurpose);
+
+      // message (optional but useful)
+      fd.append('message', message);
+
+      // files (backend should expect these keys: pan, aadhaar, gst, udyam, other)
+      if (formData.documents.pan) fd.append('pan', formData.documents.pan);
+      if (formData.documents.aadhaar) fd.append('aadhaar', formData.documents.aadhaar);
+      if (formData.documents.gst) fd.append('gst', formData.documents.gst);
+      if (formData.documents.udyam) fd.append('udyam', formData.documents.udyam);
+      if (formData.documents.other) fd.append('other', formData.documents.other);
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: fd,
+      });
+
+      if (!res.ok) {
+        let detail = '';
+        try {
+          const data = await res.json();
+          detail = data?.error ? `: ${data.error}` : '';
+        } catch {
+          // ignore json parse errors
+        }
+        throw new Error(`Submission failed (${res.status})${detail}`);
+      }
 
       setIsSubmitted(true);
       toast({
@@ -170,10 +203,10 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
         description: 'We received your application successfully.',
       });
     } catch (err: any) {
-      console.error('EmailJS Error:', err);
+      console.error('Submit Error:', err);
       toast({
         title: 'Submission Failed',
-        description: String(err?.text || err?.message || 'EmailJS error'),
+        description: String(err?.message || 'Unknown error'),
         variant: 'destructive' as any,
       });
     } finally {
@@ -457,43 +490,51 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
               { key: 'gst' as const, label: 'GST Certificate', required: false },
               { key: 'udyam' as const, label: 'Udyam Registration', required: false },
               { key: 'other' as const, label: 'Other Supporting Document', required: false },
-            ].map((doc) => (
-              <div key={doc.key} className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-primary" />
-                  {doc.label}
-                  {doc.required && <span className="text-destructive">*</span>}
-                  {!doc.required && <span className="text-muted-foreground text-xs">(Optional)</span>}
-                </Label>
+            ].map((doc) => {
+              const selected = formData.documents[doc.key];
+              const inputName = `${doc.key}_file`;
 
-                {formData.documents[doc.key] ? (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-border">
-                    <FileText className="w-5 h-5 text-primary" />
-                    <span className="flex-1 text-sm truncate">{formData.documents[doc.key]?.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(doc.key)}
-                      className="p-1 rounded-full hover:bg-destructive/10 text-destructive"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
+              return (
+                <div key={doc.key} className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-primary" />
+                    {doc.label}
+                    {doc.required && <span className="text-destructive">*</span>}
+                    {!doc.required && <span className="text-muted-foreground text-xs">(Optional)</span>}
+                  </Label>
+
                   <div className="relative">
                     <input
+                      key={`${doc.key}-${selected?.name || 'empty'}`}
                       type="file"
+                      name={inputName}
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => handleFileChange(e, doc.key)}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     />
-                    <div className="flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors">
-                      <Upload className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Click to upload or drag and drop</span>
-                    </div>
+
+                    {selected ? (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-border">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <span className="flex-1 text-sm truncate">{selected.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(doc.key)}
+                          className="p-1 rounded-full hover:bg-destructive/10 text-destructive relative z-20"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors">
+                        <Upload className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Click to upload or drag and drop</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </motion.div>
         );
 
@@ -592,43 +633,53 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
             ))}
           </div>
 
-          <div className="p-8 rounded-3xl glass-card border border-border/50">
-            <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
+          <form ref={formRef} encType="multipart/form-data">
+            <div className="p-8 rounded-3xl glass-card border border-border/50">
+              <textarea name="message" value={message} readOnly className="hidden" />
+              <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
 
-            <div className="flex justify-between mt-10 pt-6 border-t border-border/50">
-              <Button
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className={currentStep === 1 ? 'invisible' : ''}
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
-              </Button>
+              <div className="flex justify-between mt-10 pt-6 border-t border-border/50">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className={currentStep === 1 ? 'invisible' : ''}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Previous
+                </Button>
 
-              {currentStep < 4 ? (
-                <Button variant="hero" onClick={nextStep}>
-                  Next Step
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button variant="gold" onClick={handleSubmit} disabled={isSubmitting} className="min-w-[160px]">
-                  {isSubmitting ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-5 h-5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full"
-                    />
-                  ) : (
-                    <>
-                      Submit Application
-                      <Sparkles className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              )}
+                {currentStep < 4 ? (
+                  <Button type="button" variant="hero" onClick={nextStep}>
+                    Next Step
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="gold"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="min-w-[160px]"
+                  >
+                    {isSubmitting ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        className="w-5 h-5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full"
+                      />
+                    ) : (
+                      <>
+                        Submit Application
+                        <Sparkles className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          </form>
         </motion.div>
       </div>
     </section>
