@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useState, ChangeEvent } from 'react';
+import { useRef, useState, ChangeEvent, useMemo } from 'react';
 
 import {
   User,
@@ -42,21 +42,32 @@ interface FormData {
   email: string;
   city: string;
   state: string;
+
   businessName: string;
   businessType: string;
   businessVintage: string;
   annualTurnover: string;
-  loanType: string;
+
+  // Step 3 (changed)
+  loanType: string; // now used as Turnover Category (lt50l / gt50l)
   loanAmount: string;
   loanPurpose: string;
+
   documents: {
     pan: File | null;
     aadhaar: File | null;
-    gst: File | null;
-    udyam: File | null;
-    other: File | null;
+    gst: File | null; // GST Registration
+    udyam: File | null; // Udyam Registration
+    gst3b12m: File | null; // GST Return (3B) of 12 months
+    bankStatement12m: File | null; // Bank Statement (Updated 12 months)
+    itr3y: File | null; // Last Three Years Complete ITR
   };
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const MOBILE_RE = /^\d{10}$/;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 
 export function ApplicationForm() {
   const ref = useRef(null);
@@ -68,30 +79,55 @@ export function ApplicationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     mobile: '',
     email: '',
     city: '',
     state: '',
+
     businessName: '',
     businessType: '',
     businessVintage: '',
     annualTurnover: '',
-    loanType: 'kishor',
+
+    loanType: 'lt50l', // default: Less than 50 Lakhs turnover
     loanAmount: '',
     loanPurpose: '',
+
     documents: {
       pan: null,
       aadhaar: null,
       gst: null,
       udyam: null,
-      other: null,
+      gst3b12m: null,
+      bankStatement12m: null,
+      itr3y: null,
     },
   });
 
+  const clearFieldError = (field: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const updateFormData = (field: keyof Omit<FormData, 'documents'>, value: string) => {
+    // enforce digits only for mobile
+    if (field === 'mobile') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+      setFormData((prev) => ({ ...prev, mobile: digitsOnly }));
+      clearFieldError('mobile');
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [field]: value }));
+    clearFieldError(String(field));
   };
 
   const updateDocument = (docType: keyof FormData['documents'], file: File | null) => {
@@ -99,10 +135,36 @@ export function ApplicationForm() {
       ...prev,
       documents: { ...prev.documents, [docType]: file },
     }));
+    clearFieldError(`documents.${docType}`);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>, docType: keyof FormData['documents']) => {
     const file = e.target.files?.[0] || null;
+    if (!file) {
+      updateDocument(docType, null);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: 'File too large',
+        description: 'Max file size is 5MB.',
+        variant: 'destructive' as any,
+      });
+      updateDocument(docType, null);
+      return;
+    }
+
+    if (!ALLOWED_MIME.has(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Only PDF, JPG, or PNG are allowed.',
+        variant: 'destructive' as any,
+      });
+      updateDocument(docType, null);
+      return;
+    }
+
     updateDocument(docType, file);
   };
 
@@ -110,14 +172,78 @@ export function ApplicationForm() {
     updateDocument(docType, null);
   };
 
+  // ---------- VALIDATION ----------
+  const getStepErrors = (step: number): Record<string, string> => {
+    const e: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!formData.fullName.trim()) e.fullName = 'Full name is required.';
+      if (!MOBILE_RE.test(formData.mobile)) e.mobile = 'Mobile must be exactly 10 digits.';
+      if (!EMAIL_RE.test(formData.email.trim())) e.email = 'Enter a valid email address.';
+      if (!formData.city.trim()) e.city = 'City is required.';
+      if (!formData.state) e.state = 'State is required.';
+    }
+
+    if (step === 2) {
+      if (!formData.businessName.trim()) e.businessName = 'Business name is required.';
+      if (!formData.businessType) e.businessType = 'Business type is required.';
+      if (!formData.businessVintage) e.businessVintage = 'Business vintage is required.';
+      if (!formData.annualTurnover) e.annualTurnover = 'Annual turnover is required.';
+    }
+
+    if (step === 3) {
+      if (!formData.loanType) e.loanType = 'Please select a turnover category.';
+      const amountNum = Number(formData.loanAmount.replace(/[^\d]/g, ''));
+      if (!formData.loanAmount.trim() || !Number.isFinite(amountNum) || amountNum <= 0) {
+        e.loanAmount = 'Enter a valid loan amount.';
+      }
+      if (!formData.loanPurpose.trim()) e.loanPurpose = 'Loan purpose is required.';
+    }
+
+    // ✅ STEP 4: ALL DOCUMENTS REQUIRED
+    if (step === 4) {
+      if (!formData.documents.pan) e['documents.pan'] = 'PAN Card is required.';
+      if (!formData.documents.aadhaar) e['documents.aadhaar'] = 'Aadhaar Card is required.';
+      if (!formData.documents.gst) e['documents.gst'] = 'GST Registration is required.';
+      if (!formData.documents.udyam) e['documents.udyam'] = 'Udyam Registration is required.';
+      if (!formData.documents.gst3b12m) e['documents.gst3b12m'] = 'GST Return (3B) of 12 months is required.';
+      if (!formData.documents.bankStatement12m)
+        e['documents.bankStatement12m'] = 'Bank Statement (Updated 12 months) is required.';
+      if (!formData.documents.itr3y) e['documents.itr3y'] = 'Last Three Years Complete ITR is required.';
+    }
+
+    return e;
+  };
+
+  const validateStep = (step: number) => {
+    const e = getStepErrors(step);
+    setErrors((prev) => ({ ...prev, ...e }));
+    return Object.keys(e).length === 0;
+  };
+
+  const stepIsValid = useMemo(() => Object.keys(getStepErrors(currentStep)).length === 0, [currentStep, formData]);
+
   const nextStep = () => {
-    if (currentStep < 4) setCurrentStep((s) => s + 1);
+    if (!validateStep(currentStep)) {
+      toast({
+        title: 'Please fix the errors',
+        description: 'Fill all required fields correctly to continue.',
+        variant: 'destructive' as any,
+      });
+      return;
+    }
+    if (currentStep < 4) {
+      setCurrentStep((s) => s + 1);
+    }
   };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
   };
 
+  const getInputClass = (field: string) => (errors[field] ? 'border-destructive focus-visible:ring-destructive' : '');
+
+  // ---------- MESSAGE ----------
   const message = `
 NEW MUDRA LOAN APPLICATION
 --------------------------
@@ -132,30 +258,43 @@ Business Type: ${formData.businessType}
 Business Vintage: ${formData.businessVintage}
 Annual Turnover: ${formData.annualTurnover}
 
-Loan Type: ${formData.loanType}
+Turnover Category: ${formData.loanType} 
 Loan Amount: ${formData.loanAmount}
 Loan Purpose: ${formData.loanPurpose}
 
 (Documents)
 PAN Selected: ${formData.documents.pan ? formData.documents.pan.name : 'No'}
 Aadhaar Selected: ${formData.documents.aadhaar ? formData.documents.aadhaar.name : 'No'}
-GST Selected: ${formData.documents.gst ? formData.documents.gst.name : 'No'}
+GST Registration Selected: ${formData.documents.gst ? formData.documents.gst.name : 'No'}
 Udyam Selected: ${formData.documents.udyam ? formData.documents.udyam.name : 'No'}
-Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No'}
+GST Return (3B) 12 Months Selected: ${formData.documents.gst3b12m ? formData.documents.gst3b12m.name : 'No'}
+Bank Statement 12 Months Selected: ${formData.documents.bankStatement12m ? formData.documents.bankStatement12m.name : 'No'}
+ITR (Last 3 Years) Selected: ${formData.documents.itr3y ? formData.documents.itr3y.name : 'No'}
   `.trim();
 
   const handleSubmit = async () => {
+    // validate all steps (extra safety)
+    for (let s = 1; s <= 4; s++) {
+      const ok = validateStep(s);
+      if (!ok) {
+        setCurrentStep(s);
+        toast({
+          title: 'Please fix the errors',
+          description: 'Complete all required fields before submitting.',
+          variant: 'destructive' as any,
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Your Node API endpoint (set this in .env)
-      // Example: VITE_APPLICATION_API_URL=http://localhost:3001/apply
       const API_URL =
         (import.meta.env.VITE_APPLICATION_API_URL as string) || 'https://api-mudra.onrender.com/apply';
 
       const fd = new FormData();
 
-      // text fields
       fd.append('fullName', formData.fullName);
       fd.append('mobile', formData.mobile);
       fd.append('email', formData.email);
@@ -167,19 +306,21 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
       fd.append('businessVintage', formData.businessVintage);
       fd.append('annualTurnover', formData.annualTurnover);
 
-      fd.append('loanType', formData.loanType);
+      // Step 3 fields
+      fd.append('loanType', formData.loanType); // now turnover category
       fd.append('loanAmount', formData.loanAmount);
       fd.append('loanPurpose', formData.loanPurpose);
 
-      // message (optional but useful)
       fd.append('message', message);
 
-      // files (backend should expect these keys: pan, aadhaar, gst, udyam, other)
+      // ✅ ALL DOCUMENTS APPEND
       if (formData.documents.pan) fd.append('pan', formData.documents.pan);
       if (formData.documents.aadhaar) fd.append('aadhaar', formData.documents.aadhaar);
       if (formData.documents.gst) fd.append('gst', formData.documents.gst);
       if (formData.documents.udyam) fd.append('udyam', formData.documents.udyam);
-      if (formData.documents.other) fd.append('other', formData.documents.other);
+      if (formData.documents.gst3b12m) fd.append('gst3b12m', formData.documents.gst3b12m);
+      if (formData.documents.bankStatement12m) fd.append('bankStatement12m', formData.documents.bankStatement12m);
+      if (formData.documents.itr3y) fd.append('itr3y', formData.documents.itr3y);
 
       const res = await fetch(API_URL, {
         method: 'POST',
@@ -191,9 +332,7 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
         try {
           const data = await res.json();
           detail = data?.error ? `: ${data.error}` : '';
-        } catch {
-          // ignore json parse errors
-        }
+        } catch {}
         throw new Error(`Submission failed (${res.status})${detail}`);
       }
 
@@ -228,34 +367,40 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="flex items-center gap-2">
                   <User className="w-4 h-4 text-primary" />
-                  Full Name
+                  Full Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="fullName"
                   placeholder="Enter your full name"
                   value={formData.fullName}
                   onChange={(e) => updateFormData('fullName', e.target.value)}
+                  className={getInputClass('fullName')}
                 />
+                {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="mobile" className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-primary" />
-                  Mobile Number
+                  Mobile Number <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="mobile"
+                  inputMode="numeric"
                   placeholder="10-digit mobile number"
                   value={formData.mobile}
+                  maxLength={10}
                   onChange={(e) => updateFormData('mobile', e.target.value)}
+                  className={getInputClass('mobile')}
                 />
+                {errors.mobile && <p className="text-xs text-destructive">{errors.mobile}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary" />
-                Email Address
+                Email Address <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="email"
@@ -263,27 +408,33 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                 placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={(e) => updateFormData('email', e.target.value)}
+                className={getInputClass('email')}
               />
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="city" className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-primary" />
-                  City
+                  City <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="city"
                   placeholder="Your city"
                   value={formData.city}
                   onChange={(e) => updateFormData('city', e.target.value)}
+                  className={getInputClass('city')}
                 />
+                {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
+                <Label htmlFor="state">
+                  State <span className="text-destructive">*</span>
+                </Label>
                 <Select value={formData.state} onValueChange={(value) => updateFormData('state', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className={getInputClass('state')}>
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
@@ -301,12 +452,13 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                       'West Bengal',
                       'Other',
                     ].map((state) => (
-                      <SelectItem key={state} value={state.toLowerCase()}>
+                      <SelectItem key={state} value={state}>
                         {state}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.state && <p className="text-xs text-destructive">{errors.state}</p>}
               </div>
             </div>
           </motion.div>
@@ -323,24 +475,29 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
             <div className="space-y-2">
               <Label htmlFor="businessName" className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-secondary" />
-                Business Name
+                Business Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="businessName"
                 placeholder="Your business or shop name"
                 value={formData.businessName}
                 onChange={(e) => updateFormData('businessName', e.target.value)}
+                className={getInputClass('businessName')}
               />
+              {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="businessType" className="flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-secondary" />
-                  Type of Business
+                  Type of Business <span className="text-destructive">*</span>
                 </Label>
-                <Select value={formData.businessType} onValueChange={(value) => updateFormData('businessType', value)}>
-                  <SelectTrigger>
+                <Select
+                  value={formData.businessType}
+                  onValueChange={(value) => updateFormData('businessType', value)}
+                >
+                  <SelectTrigger className={getInputClass('businessType')}>
                     <SelectValue placeholder="Select business type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -350,18 +507,19 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.businessType && <p className="text-xs text-destructive">{errors.businessType}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="businessVintage" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-secondary" />
-                  Business Vintage
+                  Business Vintage <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={formData.businessVintage}
                   onValueChange={(value) => updateFormData('businessVintage', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={getInputClass('businessVintage')}>
                     <SelectValue placeholder="How old is your business?" />
                   </SelectTrigger>
                   <SelectContent>
@@ -371,19 +529,20 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                     <SelectItem value="5+">More than 5 years</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.businessVintage && <p className="text-xs text-destructive">{errors.businessVintage}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="annualTurnover" className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-secondary" />
-                Annual Turnover (Approx.)
+                Annual Turnover (Approx.) <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={formData.annualTurnover}
                 onValueChange={(value) => updateFormData('annualTurnover', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={getInputClass('annualTurnover')}>
                   <SelectValue placeholder="Select approximate turnover" />
                 </SelectTrigger>
                 <SelectContent>
@@ -394,6 +553,7 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                   <SelectItem value="50l+">Above ₹50 Lakhs</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.annualTurnover && <p className="text-xs text-destructive">{errors.annualTurnover}</p>}
             </div>
           </motion.div>
         );
@@ -409,18 +569,17 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
             <div className="space-y-4">
               <Label className="flex items-center gap-2">
                 <IndianRupee className="w-4 h-4 text-accent" />
-                Type of MUDRA Loan
+                Annual Turnover Category <span className="text-destructive">*</span>
               </Label>
 
               <RadioGroup
                 value={formData.loanType}
                 onValueChange={(value) => updateFormData('loanType', value)}
-                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
                 {[
-                  { value: 'shishu', label: 'Shishu', desc: 'Up to ₹50,000', color: 'from-emerald-500 to-teal-500' },
-                  { value: 'kishor', label: 'Kishor', desc: '₹50,001 - ₹5L', color: 'from-blue-500 to-indigo-500' },
-                  { value: 'tarun', label: 'Tarun', desc: '₹5L - ₹10L', color: 'from-purple-500 to-pink-500' },
+                  { value: 'lt50l', label: 'Less than 50 Lakhs', desc: 'Turnover below ₹50,00,000' },
+                  { value: 'gt50l', label: 'More than 50 Lakhs', desc: 'Turnover above ₹50,00,000' },
                 ].map((type) => (
                   <Label
                     key={type.value}
@@ -431,35 +590,37 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                     }`}
                   >
                     <RadioGroupItem value={type.value} className="sr-only" />
-                    <div
-                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${type.color} flex items-center justify-center mb-2`}
-                    >
-                      <span className="text-primary-foreground font-bold">{type.label[0]}</span>
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                      <span className="text-primary font-bold">{type.label[0]}</span>
                     </div>
                     <span className="font-semibold text-foreground">{type.label}</span>
                     <span className="text-xs text-muted-foreground">{type.desc}</span>
                   </Label>
                 ))}
               </RadioGroup>
+
+              {errors.loanType && <p className="text-xs text-destructive">{errors.loanType}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="loanAmount" className="flex items-center gap-2">
                 <IndianRupee className="w-4 h-4 text-accent" />
-                Required Loan Amount
+                Required Loan Amount <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="loanAmount"
-                placeholder="e.g., ₹2,00,000"
+                placeholder="e.g., 200000"
                 value={formData.loanAmount}
                 onChange={(e) => updateFormData('loanAmount', e.target.value)}
+                className={getInputClass('loanAmount')}
               />
+              {errors.loanAmount && <p className="text-xs text-destructive">{errors.loanAmount}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="loanPurpose" className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-accent" />
-                Purpose of Loan
+                Purpose of Loan <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="loanPurpose"
@@ -467,7 +628,9 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                 value={formData.loanPurpose}
                 onChange={(e) => updateFormData('loanPurpose', e.target.value)}
                 rows={4}
+                className={getInputClass('loanPurpose')}
               />
+              {errors.loanPurpose && <p className="text-xs text-destructive">{errors.loanPurpose}</p>}
             </div>
           </motion.div>
         );
@@ -487,12 +650,13 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
             {[
               { key: 'pan' as const, label: 'PAN Card', required: true },
               { key: 'aadhaar' as const, label: 'Aadhaar Card', required: true },
-              { key: 'gst' as const, label: 'GST Certificate', required: false },
+              { key: 'gst' as const, label: 'GST Registration', required: false },
               { key: 'udyam' as const, label: 'Udyam Registration', required: false },
-              { key: 'other' as const, label: 'Other Supporting Document', required: false },
+              { key: 'gst3b12m' as const, label: 'GST Return (3B) of 12 months', required: true},
+              { key: 'bankStatement12m' as const, label: 'Bank Statement (Updated 12 months)', required: true },
+              { key: 'itr3y' as const, label: 'Last Three Years Complete ITR', required: true },
             ].map((doc) => {
               const selected = formData.documents[doc.key];
-              const inputName = `${doc.key}_file`;
 
               return (
                 <div key={doc.key} className="space-y-2">
@@ -507,7 +671,6 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                     <input
                       key={`${doc.key}-${selected?.name || 'empty'}`}
                       type="file"
-                      name={inputName}
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => handleFileChange(e, doc.key)}
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
@@ -526,12 +689,22 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors">
+                      <div
+                        className={`flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed transition-colors ${
+                          errors[`documents.${doc.key}`]
+                            ? 'border-destructive'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
                         <Upload className="w-5 h-5 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">Click to upload or drag and drop</span>
                       </div>
                     )}
                   </div>
+
+                  {errors[`documents.${doc.key}`] && (
+                    <p className="text-xs text-destructive">{errors[`documents.${doc.key}`]}</p>
+                  )}
                 </div>
               );
             })}
@@ -566,8 +739,7 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                 Thank You! <Sparkles className="inline w-8 h-8 text-accent" />
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Your MUDRA loan application has been submitted successfully.
-                Our team will contact you within 24-48 hours.
+                Your MUDRA loan application has been submitted successfully. Our team will contact you within 24-48 hours.
               </p>
             </motion.div>
           </motion.div>
@@ -594,8 +766,7 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
             Apply for Your <span className="gradient-text">MUDRA Loan</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Fill in the details below and submit your application.
-            We'll get back to you within 24-48 hours.
+            Fill in the details below and submit your application. We'll get back to you within 24-48 hours.
           </p>
         </motion.div>
 
@@ -651,7 +822,13 @@ Other Selected: ${formData.documents.other ? formData.documents.other.name : 'No
                 </Button>
 
                 {currentStep < 4 ? (
-                  <Button type="button" variant="hero" onClick={nextStep}>
+                  <Button
+                    type="button"
+                    variant="hero"
+                    onClick={nextStep}
+                    disabled={!stepIsValid}
+                    title={!stepIsValid ? 'Fill all required fields to continue' : undefined}
+                  >
                     Next Step
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
