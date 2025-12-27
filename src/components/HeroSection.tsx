@@ -16,7 +16,7 @@ export function HeroSection() {
       <div className="absolute inset-0 overflow-hidden">
         {/* Grid Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(0,0%,100%,0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(0,0%,100%,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        
+
         {/* Floating Orbs */}
         <motion.div
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-primary/30 to-secondary/20 blur-3xl"
@@ -133,11 +133,12 @@ Turnover ≥ ₹50 Lakhs (as applicable).
               Apply Now
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
+
             <Button
               variant="heroOutline"
               size="xl"
               className="w-full sm:w-auto"
-              onClick={() => scrollToSection('#calculator')}
+              onClick={() => scrollToSection('#eligibility-calculator')} // ✅ changed here
             >
               Check Eligibility
             </Button>

@@ -650,8 +650,8 @@ ITR (Last 3 Years) Selected: ${formData.documents.itr3y ? formData.documents.itr
             {[
               { key: 'pan' as const, label: 'PAN Card', required: true },
               { key: 'aadhaar' as const, label: 'Aadhaar Card', required: true },
-              { key: 'gst' as const, label: 'GST Registration', required: false },
-              { key: 'udyam' as const, label: 'Udyam Registration', required: false },
+              { key: 'gst' as const, label: 'GST Registration', required: true },
+              { key: 'udyam' as const, label: 'Udyam Registration', required: true },
               { key: 'gst3b12m' as const, label: 'GST Return (3B) of 12 months', required: true},
               { key: 'bankStatement12m' as const, label: 'Bank Statement (Updated 12 months)', required: true },
               { key: 'itr3y' as const, label: 'Last Three Years Complete ITR', required: true },
