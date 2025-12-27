@@ -26,10 +26,7 @@ const faqs = [
     question: 'Is collateral required for MUDRA Loans?',
     answer: 'No, MUDRA loans are collateral-free. You do not need to pledge any assets or property to avail a MUDRA loan. This makes it easier for small entrepreneurs who may not have significant assets to access credit.',
   },
-  {
-    question: 'Is there any processing fee for MUDRA Loans?',
-    answer: 'No, there is no processing fee for MUDRA loans. The government has mandated that lending institutions cannot charge any processing fee for these loans, making them more accessible and affordable for small business owners.',
-  },
+,
   {
     question: 'What documents are required?',
     answer: 'The basic documents required are: PAN Card, Aadhaar Card for identity verification, passport size photographs, address proof, business proof (like shop license or registration), and bank statements. GST registration and Udyam registration are optional but helpful if available.',

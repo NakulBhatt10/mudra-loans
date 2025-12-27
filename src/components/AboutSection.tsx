@@ -21,15 +21,15 @@ const businessTypes = [
 ];
 
 const loanTypes = [
-  { icon: CreditCard, label: 'Term Loan' },
+  { icon: CreditCard, label: 'Term Loan (For machinery )' },
   { icon: Wallet, label: 'Working Capital' },
   { icon: Building, label: 'Overdraft Limit' },
 ];
 
 const benefits = [
   { icon: ShieldCheck, title: 'No Collateral', desc: 'Get loans without pledging any asset' },
-  { icon: Percent, title: 'Zero Processing Fee', desc: 'No hidden charges or processing costs' },
-  { icon: CheckCircle2, title: 'Low Interest', desc: 'Competitive rates around 9-10% p.a.' },
+  { icon: Percent, title: 'Processing Fee + Government guarantee fees ', desc: 'No hidden charges ' },
+  { icon: CheckCircle2, title: 'Low Interest', desc: 'Competitive rates ~12% p.a.' },
 ];
 
 export function AboutSection() {

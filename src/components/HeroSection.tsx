@@ -101,7 +101,7 @@ export function HeroSection() {
               />
             </span>
             <br />
-            for Small Business Growth
+            for Business Growth
           </motion.h1>
 
           {/* Subheading */}
@@ -114,7 +114,7 @@ export function HeroSection() {
             Pradhan Mantri Mudra Yojana (PMMY) — A Government of India initiative 
             providing easy loans for micro and macro enterprises.Turnover less than ₹50 Lakhs &
 Turnover ≥ ₹50 Lakhs (as applicable).
-            <span className="text-accent font-semibold"> Zero processing fees. No collateral needed.</span>
+            <span className="text-accent font-semibold"> No collateral needed.</span>
           </motion.p>
 
           {/* CTA Buttons */}
@@ -151,10 +151,10 @@ Turnover ≥ ₹50 Lakhs (as applicable).
             className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto"
           >
             {[
-              { value: '₹10L', label: 'Max Loan Amount' },
-              { value: '0%', label: 'Processing Fee' },
+              { value: '₹ 2 CR', label: 'Max Loan Amount' },
+              { value: '2%', label: 'Processing Fee + Government guarantee fees ' },
               { value: '~12%', label: 'Interest Rate' },
-              { value: '5 Yrs', label: 'Tenure' },
+              { value: '1 yr', label: 'Yearly renewal' },
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
