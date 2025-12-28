@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Shield, BadgeCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// ✅ Add this import (adjust path if your file is elsewhere)
+import modiImg from '/modi3.png';
+
 export function HeroSection() {
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -12,37 +15,44 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[hsl(215,90%,20%)] via-[hsl(200,85%,25%)] to-[hsl(190,80%,30%)]">
+{/* ✅ Modi Ji blended image on the extreme left (desktop + mobile) */}
+<div className="absolute inset-0 z-0 pointer-events-none">
+  <img
+    src={modiImg}
+    alt="Modi"
+    className="
+      absolute left-0 bottom-0
+      h-[72%] sm:h-[75%] md:h-[95%]
+      w-auto object-cover
+      opacity-100
+      translate-x-0
+
+      [mask-image:linear-gradient(to_right,rgba(0,0,0,1)_0%,rgba(0,0,0,0.9)_35%,rgba(0,0,0,0)_75%)]
+      [-webkit-mask-image:linear-gradient(to_right,rgba(0,0,0,1)_0%,rgba(0,0,0,0.9)_35%,rgba(0,0,0,0)_75%)]
+
+      mix-blend-screen
+    "
+  />
+
+  {/* Soft glow for smoother blend */}
+  <div className="absolute left-0 bottom-0 w-[360px] sm:w-[460px] md:w-[520px] h-[360px] sm:h-[460px] md:h-[520px] bg-accent/10 blur-3xl" />
+</div>
+
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden z-[1]">
         {/* Grid Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(0,0%,100%,0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(0,0%,100%,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
         {/* Floating Orbs */}
         <motion.div
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-primary/30 to-secondary/20 blur-3xl"
-          animate={{
-            x: [0, 50, 0],
-            y: [0, -30, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ x: [0, 50, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-gradient-to-br from-secondary/30 to-accent/20 blur-3xl"
-          animate={{
-            x: [0, -40, 0],
-            y: [0, 40, 0],
-            scale: [1, 0.9, 1],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ x: [0, -40, 0], y: [0, 40, 0], scale: [1, 0.9, 1] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* Floating Icons */}
@@ -111,9 +121,9 @@ export function HeroSection() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-lg md:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Pradhan Mantri Mudra Yojana (PMMY) — A Government of India initiative 
+            Pradhan Mantri Mudra Yojana (PMMY) — A Government of India initiative
             providing easy loans for micro and macro enterprises.Turnover less than ₹50 Lakhs &
-Turnover ≥ ₹50 Lakhs (as applicable).
+            Turnover ≥ ₹50 Lakhs (as applicable).
             <span className="text-accent font-semibold"> No collateral needed.</span>
           </motion.p>
 
@@ -138,7 +148,7 @@ Turnover ≥ ₹50 Lakhs (as applicable).
               variant="heroOutline"
               size="xl"
               className="w-full sm:w-auto"
-              onClick={() => scrollToSection('#eligibility-calculator')} // ✅ changed here
+              onClick={() => scrollToSection('#eligibility-calculator')}
             >
               Check Eligibility
             </Button>
@@ -175,7 +185,7 @@ Turnover ≥ ₹50 Lakhs (as applicable).
       </div>
 
       {/* Bottom Wave */}
-      <div className="absolute bottom-0 left-0 right-0">
+      <div className="absolute bottom-0 left-0 right-0 z-10">
         <svg viewBox="0 0 1440 120" className="w-full h-auto fill-background">
           <path d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,90 1440,80 L1440,120 L0,120 Z" />
         </svg>

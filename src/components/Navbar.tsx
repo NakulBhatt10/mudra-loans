@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Building2 } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+// ✅ Add this import (make sure the path + filename match your project)
+import emblem from '/emblem1.png';
 
 const navLinks = [
   { name: 'About', href: '#about' },
@@ -53,13 +56,26 @@ export function Navbar() {
               whileHover={{ scale: 1.02 }}
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg group-hover:shadow-primary/30 transition-shadow">
-                <Building2 className="w-5 h-5 text-primary-foreground" />
+                {/* ✅ REPLACED ICON WITH EMBLEM IMAGE */}
+                <img
+                  src={emblem}
+                  alt="State Emblem of India"
+                  className="w-500 h-500 object-contain"
+                />
               </div>
               <div className="flex flex-col">
-                <span className={`font-bold text-lg leading-tight ${isScrolled ? 'text-foreground' : 'text-primary-foreground'}`}>
+                <span
+                  className={`font-bold text-lg leading-tight ${
+                    isScrolled ? 'text-foreground' : 'text-primary-foreground'
+                  }`}
+                >
                   MUDRA
                 </span>
-                <span className={`text-xs font-medium leading-tight ${isScrolled ? 'text-muted-foreground' : 'text-primary-foreground/70'}`}>
+                <span
+                  className={`text-xs font-medium leading-tight ${
+                    isScrolled ? 'text-muted-foreground' : 'text-primary-foreground/70'
+                  }`}
+                >
                   Loans
                 </span>
               </div>
@@ -96,7 +112,9 @@ export function Navbar() {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className={`lg:hidden p-2 rounded-lg transition-colors ${
-                isScrolled ? 'text-foreground hover:bg-muted' : 'text-primary-foreground hover:bg-primary-foreground/10'
+                isScrolled
+                  ? 'text-foreground hover:bg-muted'
+                  : 'text-primary-foreground hover:bg-primary-foreground/10'
               }`}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
