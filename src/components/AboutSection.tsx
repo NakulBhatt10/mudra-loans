@@ -71,7 +71,7 @@ export function AboutSection() {
             <span className="gradient-text">Pradhan Mantri Mudra Yojana?</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            A flagship government scheme empowering micro and small enterprises 
+            A flagship government scheme empowering enterprises 
             with easy access to credit for business growth and entrepreneurship.
           </p>
         </motion.div>
